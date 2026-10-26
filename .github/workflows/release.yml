@@ -87,8 +87,9 @@ jobs:
           VERSION: ${{ needs.build.outputs.version }}
         run: |
           set -euo pipefail
-          asset_name="Plain Craft Launcher rebuild ${VERSION}.exe"
+          asset_name="Plain-Craft-Launcher-rebuild-${VERSION}.exe"
           asset="dist/${asset_name}"
+          cp "dist/Plain Craft Launcher rebuild ${VERSION}.exe" "$asset"
           release_json=$(jq -n \
             --arg tag "$GITHUB_REF_NAME" \
             --arg name "Plain Craft Launcher rebuild ${VERSION}" \
@@ -102,7 +103,8 @@ jobs:
             release_id=$(jq -r '.id' <<< "$release")
             old_asset_name="dist.Plain.Craft.Launcher.rebuild.${VERSION}.exe"
             normalized_asset_name="Plain.Craft.Launcher.rebuild.${VERSION}.exe"
-            for asset_id in $(jq -r --arg name "$asset_name" --arg old_name "$old_asset_name" --arg normalized_name "$normalized_asset_name" '.assets[] | select(.name == $name or .name == $old_name or .name == $normalized_name) | .id' <<< "$release"); do
+            old_hyphen_asset_name="Plain-Craft-Launcher-rebuild-${VERSION}.exe"
+            for asset_id in $(jq -r --arg name "$asset_name" --arg old_name "$old_asset_name" --arg normalized_name "$normalized_asset_name" --arg old_hyphen_name "$old_hyphen_asset_name" '.assets[] | select(.name == $name or .name == $old_name or .name == $normalized_name or .name == $old_hyphen_name) | .id' <<< "$release"); do
               curl --fail-with-body -sS \
                 -X DELETE \
                 -H "Authorization: Bearer ${GH_TOKEN}" \
@@ -132,3 +134,8 @@ jobs:
             exit 1
           fi
           gh release upload "$GITHUB_REF_NAME" "$asset" --clobber
+          actual_name=$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[] | select(.name == "'"${asset_name}"'") | .name')
+          if [[ "$actual_name" != "$asset_name" ]]; then
+            echo "Expected release asset '$asset_name', got '$actual_name'" >&2
+            exit 1
+          fi
