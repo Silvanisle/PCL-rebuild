@@ -87,18 +87,44 @@ jobs:
           VERSION: ${{ needs.build.outputs.version }}
         run: |
           set -euo pipefail
-          asset="dist/Plain Craft Launcher rebuild ${VERSION}.exe"
+          asset_name="Plain Craft Launcher rebuild ${VERSION}.exe"
+          asset="dist/${asset_name}"
           release_json=$(jq -n \
             --arg tag "$GITHUB_REF_NAME" \
             --arg name "Plain Craft Launcher rebuild ${VERSION}" \
             '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "首次自动构建测试版本。此 Release 由 GitHub Actions 自动构建并发布，用于验证构建流程。请参阅仓库 README。", draft: false, prerelease: false}')
-          release=$(curl --fail-with-body -sS \
-            -X POST \
+          release=$(curl -sS \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
-            -d "$release_json")
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}")
+          if [[ $(jq -r '.id // empty' <<< "$release") ]]; then
+            release_id=$(jq -r '.id' <<< "$release")
+            old_asset_name="dist.Plain.Craft.Launcher.rebuild.${VERSION}.exe"
+            for asset_id in $(jq -r --arg name "$asset_name" --arg old_name "$old_asset_name" '.assets[] | select(.name == $name or .name == $old_name) | .id' <<< "$release"); do
+              curl --fail-with-body -sS \
+                -X DELETE \
+                -H "Authorization: Bearer ${GH_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}"
+            done
+            release=$(curl --fail-with-body -sS \
+              -X PATCH \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+              -d "$release_json")
+          else
+            release=$(curl --fail-with-body -sS \
+              -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
+              -d "$release_json")
+          fi
           upload_url=$(jq -r '.upload_url' <<< "$release" | sed 's/{?name,label}//')
           if [[ -z "$upload_url" || "$upload_url" == "null" ]]; then
             echo "$release" >&2
@@ -111,4 +137,4 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -H "Content-Type: application/octet-stream" \
             --data-binary "@${asset}" \
-            "${upload_url}?name=$(python -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$asset")"
+            "${upload_url}?name=$(python -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$asset_name")"
