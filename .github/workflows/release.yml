@@ -81,11 +81,34 @@ jobs:
           path: dist
 
       - name: Create GitHub Release
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            "dist/Plain Craft Launcher rebuild ${{ needs.build.outputs.version }}.exe" \
-            --title "Plain Craft Launcher rebuild ${{ needs.build.outputs.version }}" \
-            --draft \
-            --generate-notes
+          set -euo pipefail
+          asset="dist/Plain Craft Launcher rebuild ${VERSION}.exe"
+          release_json=$(jq -n \
+            --arg tag "$GITHUB_REF_NAME" \
+            --arg name "Plain Craft Launcher rebuild ${VERSION}" \
+            '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "由 GitHub Actions 自动构建的第三方版本，仅限仓库所有者本人使用。请参阅仓库 README。", draft: false, prerelease: false}')
+          release=$(curl --fail-with-body -sS \
+            -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
+            -d "$release_json")
+          upload_url=$(jq -r '.upload_url' <<< "$release" | sed 's/{?name,label}//')
+          if [[ -z "$upload_url" || "$upload_url" == "null" ]]; then
+            echo "$release" >&2
+            exit 1
+          fi
+          curl --fail-with-body -sS \
+            -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@${asset}" \
+            "${upload_url}?name=$(python -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$asset")"

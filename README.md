@@ -4,8 +4,8 @@
 
 ## 使用范围
 
-- 当前仓库及自动构建仅供仓库所有者本人测试使用。
-- **请勿下载、分发、镜像、转存或公开发布本仓库构建的客户端。**
+- 当前仓库及自动构建仅供仓库所有者本人测试使用。仓库应保持为私有仓库。
+- 构建产物仅限仓库所有者本人使用；请勿向无权限用户分发、镜像、转存或公开发布客户端。
 - 当前源码修改是将 `RestrictMcDownload` 设为 `False`，用于恢复原版 Minecraft 下载入口。
 - 源码和构建产物均不包含 CurseForge API Key 或 Microsoft 客户端凭据。
 
@@ -17,7 +17,7 @@ GitHub Actions 在 Windows runner 上构建 Release 版本。构建产物名称�
 Plain Craft Launcher rebuild [完整版本号]
 ```
 
-完整版本号从四段式 `AssemblyFileVersion` 读取，例如 `2.99.0.1`。打版本标签会创建 GitHub **草稿 Release**；在授权与分发范围确认前不会自动公开发布。
+完整版本号从四段式 `AssemblyFileVersion` 读取，例如 `2.99.0.1`。打版本标签会创建 GitHub Release；仓库及下载产物应保持私有，不向外部用户分发。
 
 ## 致谢
 
