@@ -38,6 +38,11 @@ jobs:
             echo "UPSTREAM_CHANGED=true" >> "$GITHUB_ENV"
           fi
 
+      - name: Remove upstream official build archive
+        if: env.UPSTREAM_CHANGED == 'true'
+        shell: bash
+        run: rm -f -- '最新正式版.zip'
+
       - name: Re-enable Minecraft download in source
         if: env.UPSTREAM_CHANGED == 'true'
         shell: bash

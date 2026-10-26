@@ -342,3 +342,6 @@ ASALocalRun/
 healthchecksdb
 
 MaskFiles/
+
+# Upstream official build archive; never include it in this rebuild repository
+/最新正式版.zip
