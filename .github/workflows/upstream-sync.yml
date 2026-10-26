@@ -1,0 +1,60 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+  # Manual or scheduled runs only: upstream pushes do not trigger workflows
+  # in this repository automatically.
+
+permissions:
+  contents: write
+
+concurrency:
+  group: upstream-sync-main
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout customization branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          submodules: false
+
+      - name: Fetch upstream and merge
+        run: |
+          git remote add upstream https://github.com/Meloong-Git/PCL.git
+          git fetch upstream main --tags
+          git merge --no-edit --no-ff upstream/main
+
+      - name: Re-enable Minecraft download in source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('Plain Craft Launcher 2/Modules/ModSecret.vb')
+          text = path.read_text(encoding='utf-8-sig')
+          old = 'Public Const RestrictMcDownload As Boolean = True'
+          new = 'Public Const RestrictMcDownload As Boolean = False'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one restriction constant, found {count}; refusing to patch.')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8-sig', newline='')
+          PY
+
+      - name: Commit and push synchronized source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No upstream or patch changes to commit."
+            exit 0
+          fi
+          git add "Plain Craft Launcher 2/Modules/ModSecret.vb"
+          git add -u
+          git commit -m "Sync upstream and enable Minecraft downloads"
+          git push origin HEAD:main

@@ -1,0 +1,73 @@
+name: Build Modified PCL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Plain Craft Launcher 2/**'
+      - 'PCLCS/**'
+      - 'MeloongCore/**'
+      - '.github/workflows/build-modified.yml'
+  pull_request:
+    paths:
+      - 'Plain Craft Launcher 2/**'
+      - 'PCLCS/**'
+      - 'MeloongCore/**'
+      - '.github/workflows/build-modified.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Release]
+
+    steps:
+      - name: Checkout source and submodules
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Read full application version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $assemblyInfo = Get-Content 'Plain Craft Launcher 2\My Project\AssemblyInfo.vb' -Raw
+          $match = [regex]::Match($assemblyInfo, 'AssemblyFileVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)')
+          if (-not $match.Success) { throw 'Could not find a four-part AssemblyFileVersion.' }
+          "PCL_VERSION=$($match.Groups[1].Value)" >> $env:GITHUB_ENV
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Update help archive
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $help = Join-Path $env:RUNNER_TEMP 'PCL2Help'
+          git clone --depth 1 --branch master https://github.com/LTCatt/PCL2Help.git $help
+          Compress-Archive -Path (Join-Path $help '*') -DestinationPath (Join-Path $help 'Help.zip') -Force
+          Copy-Item (Join-Path $help 'Help.zip') 'Plain Craft Launcher 2/Resources/Help.zip' -Force
+
+      - name: Restore packages
+        run: dotnet restore PCLCS\PCLCS.csproj
+
+      - name: Build
+        run: msbuild "Plain Craft Launcher 2\Plain Craft Launcher 2.vbproj" -p:Configuration=${{ matrix.configuration }} -p:Platform=AnyCPU
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Plain Craft Launcher rebuild ${{ env.PCL_VERSION }}
+          path: Plain Craft Launcher 2\obj\${{ matrix.configuration }}\Plain Craft Launcher 2.exe
+          if-no-files-found: error
+          retention-days: 14
+
