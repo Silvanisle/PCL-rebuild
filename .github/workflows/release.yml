@@ -101,7 +101,8 @@ jobs:
           if [[ $(jq -r '.id // empty' <<< "$release") ]]; then
             release_id=$(jq -r '.id' <<< "$release")
             old_asset_name="dist.Plain.Craft.Launcher.rebuild.${VERSION}.exe"
-            for asset_id in $(jq -r --arg name "$asset_name" --arg old_name "$old_asset_name" '.assets[] | select(.name == $name or .name == $old_name) | .id' <<< "$release"); do
+            normalized_asset_name="Plain.Craft.Launcher.rebuild.${VERSION}.exe"
+            for asset_id in $(jq -r --arg name "$asset_name" --arg old_name "$old_asset_name" --arg normalized_name "$normalized_asset_name" '.assets[] | select(.name == $name or .name == $old_name or .name == $normalized_name) | .id' <<< "$release"); do
               curl --fail-with-body -sS \
                 -X DELETE \
                 -H "Authorization: Bearer ${GH_TOKEN}" \
@@ -130,11 +131,4 @@ jobs:
             echo "$release" >&2
             exit 1
           fi
-          curl --fail-with-body -sS \
-            -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary "@${asset}" \
-            "${upload_url}?name=$(python -c 'import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))' "$asset_name")"
+          gh release upload "$GITHUB_REF_NAME" "$asset" --clobber
