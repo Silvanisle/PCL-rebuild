@@ -91,7 +91,7 @@ jobs:
           release_json=$(jq -n \
             --arg tag "$GITHUB_REF_NAME" \
             --arg name "Plain Craft Launcher rebuild ${VERSION}" \
-            '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "由 GitHub Actions 自动构建的第三方版本，仅限仓库所有者本人使用。请参阅仓库 README。", draft: false, prerelease: false}')
+            '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "首次自动构建测试版本。此 Release 由 GitHub Actions 自动构建并发布，用于验证构建流程。请参阅仓库 README。", draft: false, prerelease: false}')
           release=$(curl --fail-with-body -sS \
             -X POST \
             -H "Authorization: Bearer ${GH_TOKEN}" \
