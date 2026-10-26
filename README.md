@@ -1,40 +1,40 @@
 # Plain Craft Launcher rebuild
 
-This repository is a third-party modified build of [Meloong-Git/PCL](https://github.com/Meloong-Git/PCL).
+这是基于 [Meloong-Git/PCL](https://github.com/Meloong-Git/PCL) 源码独立修改并构建的第三方版本，**不是官方 PCL，也不代表或暗示原作者对本项目的认可、担保或维护**。
 
-## Status
+## 使用范围
 
-- This is **not an official PCL distribution** and is not endorsed or maintained by the original author.
-- The current modification restores the Minecraft download page by building the source with `RestrictMcDownload = False`.
-- The repository and build workflow are currently for the owner's personal use only. **Do not download, redistribute, mirror, or publish the build artifacts.**
-- No CurseForge API key or Microsoft client credential is included in the source or build artifacts.
+- 当前仓库及自动构建仅供仓库所有者本人测试使用。
+- **请勿下载、分发、镜像、转存或公开发布本仓库构建的客户端。**
+- 当前源码修改是将 `RestrictMcDownload` 设为 `False`，用于恢复原版 Minecraft 下载入口。
+- 源码和构建产物均不包含 CurseForge API Key 或 Microsoft 客户端凭据。
 
-## Build output
+## 自动构建
 
-GitHub Actions builds the Release configuration on Windows and uploads an artifact named:
+GitHub Actions 在 Windows runner 上构建 Release 版本。构建产物名称格式为：
 
 ```text
-Plain Craft Launcher rebuild [full version]
+Plain Craft Launcher rebuild [完整版本号]
 ```
 
-The full version is read from the four-part `AssemblyFileVersion`, for example `2.99.0.1`.
+完整版本号从四段式 `AssemblyFileVersion` 读取，例如 `2.99.0.1`。打版本标签会创建 GitHub **草稿 Release**；在授权与分发范围确认前不会自动公开发布。
 
-## Attribution
+## 致谢
 
-Plain Craft Launcher and its source code are created by the original PCL authors. Special thanks to **龙腾猫跃 (LTCatt)**, the original author and maintainer.
+感谢 PCL 原作者 **龙腾猫跃（LTCatt）** 及 PCL 社区的长期维护与贡献。
 
-Support the original author through the official sponsorship page:
+原作者赞助链接：
 
 https://meloong.com/afd/a/LTCat
 
-Original repository:
+上游源码仓库：
 
 https://github.com/Meloong-Git/PCL
 
-The upstream `LICENCE` and the upstream reasonable-use guidance are retained in this repository. Review them before any use beyond private testing.
+本仓库保留上游 `LICENCE` 文件。修改、使用或分发前，请阅读上游许可及其引用的合理使用说明；本项目说明不替代法律意见。
 
-## Upstream resources
+## 上游资源
 
-- [Official PCL download](https://meloong.com/pcl)
-- [PCL discussions](https://github.com/Meloong-Git/PCL/discussions)
-- [PCL help repository](https://github.com/LTCatt/PCL2Help)
+- [PCL 官方下载](https://meloong.com/pcl)
+- [PCL 讨论区](https://github.com/Meloong-Git/PCL/discussions)
+- [PCL 帮助文档仓库](https://github.com/LTCatt/PCL2Help)
