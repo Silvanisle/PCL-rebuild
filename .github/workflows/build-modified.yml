@@ -34,6 +34,10 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Apply modified-build notice
+        shell: bash
+        run: python .github/scripts/patch_modified_notice.py
+
       - name: Read full application version
         shell: pwsh
         run: |

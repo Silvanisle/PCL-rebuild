@@ -28,6 +28,10 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Apply modified-build notice
+        shell: bash
+        run: python .github/scripts/patch_modified_notice.py
+
       - name: Read full application version
         id: version
         shell: pwsh
@@ -100,7 +104,7 @@ jobs:
           release_json=$(jq -n \
             --arg tag "$RELEASE_TAG" \
             --arg name "Plain Craft Launcher rebuild ${VERSION}" \
-            '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "由 GitHub Actions 自动同步上游更新并构建发布的第三方版本。请参阅仓库 README。", draft: false, prerelease: false}')
+            '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "添加了修改版说明", draft: false, prerelease: false}')
           release=$(curl -sS \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
