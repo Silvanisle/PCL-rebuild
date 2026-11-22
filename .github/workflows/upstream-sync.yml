@@ -26,19 +26,45 @@ jobs:
           fetch-depth: 0
           submodules: false
 
-      - name: Fetch upstream and merge
+      - name: Detect latest upstream release
+        id: release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          set -euo pipefail
+          release=$(gh api "repos/Meloong-Git/PCL/releases?per_page=30" \
+            --jq '[.[] | select(.draft == false)] | sort_by(.published_at) | last | "\(.tag_name)\t\(.published_at)"')
+          tag=$(printf '%s' "$release" | cut -f1)
+          published=$(printf '%s' "$release" | cut -f2)
+          if [ -z "${tag}" ]; then
+            echo "::error::Could not resolve a published release from Meloong-Git/PCL."
+            exit 1
+          fi
+          echo "Latest upstream release: ${tag} (published ${published})"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
           git remote add upstream https://github.com/Meloong-Git/PCL.git
-          git fetch upstream main --tags
-          if git merge-base --is-ancestor upstream/main HEAD; then
-            echo "Upstream is already synchronized."
+          git fetch upstream --tags --force
+          target=$(git rev-list -n1 "refs/tags/${tag}")
+          echo "Release commit: ${target}"
+          if git merge-base --is-ancestor "${target}" HEAD; then
+            echo "Release ${tag} is already included in main."
             echo "UPSTREAM_CHANGED=false" >> "$GITHUB_ENV"
           else
-            git merge --no-edit --no-ff upstream/main
+            echo "Release ${tag} is new; merging it."
             echo "UPSTREAM_CHANGED=true" >> "$GITHUB_ENV"
+            echo "UPSTREAM_TARGET=${target}" >> "$GITHUB_ENV"
           fi
+
+      - name: Merge upstream release
+        if: env.UPSTREAM_CHANGED == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-edit --no-ff "${UPSTREAM_TARGET}"
 
       - name: Remove upstream official build archive
         if: env.UPSTREAM_CHANGED == 'true'
@@ -80,7 +106,7 @@ jobs:
           fi
           git add "Plain Craft Launcher 2/Modules/ModSecret.vb"
           git add -u
-          git commit -m "Sync upstream and enable Minecraft downloads"
+          git commit -m "Sync upstream release ${{ steps.release.outputs.tag }} and enable Minecraft downloads"
           git push origin HEAD:main
 
       - name: Create release tag and dispatch release build
@@ -96,7 +122,7 @@ jobs:
           text = Path('Plain Craft Launcher 2/My Project/AssemblyInfo.vb').read_text(encoding='utf-8-sig')
           match = re.search(r'AssemblyFileVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)', text)
           if not match:
-              raise SystemExit('Could not find a four-partFileVersion.')
+              raise SystemExit('Could not find a four-part AssemblyFileVersion.')
           print(match.group(1))
           PY
           )

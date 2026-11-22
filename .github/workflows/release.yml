@@ -104,7 +104,7 @@ jobs:
           release_json=$(jq -n \
             --arg tag "$RELEASE_TAG" \
             --arg name "Plain Craft Launcher rebuild ${VERSION}" \
-            '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "添加了修改版说明", draft: false, prerelease: false}')
+            '{tag_name: $tag, target_commitish: env.GITHUB_SHA, name: $name, body: "", draft: false, prerelease: false}')
           release=$(curl -sS \
             -H "Authorization: Bearer ${GH_TOKEN}" \
             -H "Accept: application/vnd.github+json" \
