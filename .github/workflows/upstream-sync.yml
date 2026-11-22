@@ -56,9 +56,16 @@ jobs:
           old = 'Public Const RestrictMcDownload As Boolean = True'
           new = 'Public Const RestrictMcDownload As Boolean = False'
           count = text.count(old)
+          if count == 0:
+              # Upstream may already have it set to False
+              if new in text:
+                  print("Already patched: RestrictMcDownload is already False.")
+                  raise SystemExit(0)
+              raise SystemExit(f'Expected restriction constant not found; refusing to patch.')
           if count != 1:
               raise SystemExit(f'Expected exactly one restriction constant, found {count}; refusing to patch.')
           path.write_text(text.replace(old, new, 1), encoding='utf-8-sig', newline='')
+          print("Patched RestrictMcDownload to False.")
           PY
 
       - name: Update startup notice for modified build
@@ -90,7 +97,7 @@ jobs:
           text = Path('Plain Craft Launcher 2/My Project/AssemblyInfo.vb').read_text(encoding='utf-8-sig')
           match = re.search(r'AssemblyFileVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)', text)
           if not match:
-              raise SystemExit('Could not find a four-part/FileVersion.')
+              raise SystemExit('Could not find a four-partFileVersion.')
           print(match.group(1))
           PY
           )
