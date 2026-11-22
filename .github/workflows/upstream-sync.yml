@@ -28,6 +28,8 @@ jobs:
 
       - name: Fetch upstream and merge
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote add upstream https://github.com/Meloong-Git/PCL.git
           git fetch upstream main --tags
           if git merge-base --is-ancestor upstream/main HEAD; then
@@ -66,8 +68,6 @@ jobs:
       - name: Commit and push synchronized source
         if: env.UPSTREAM_CHANGED == 'true'
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --quiet; then
             echo "No upstream or patch changes to commit."
             exit 0
@@ -90,7 +90,7 @@ jobs:
           text = Path('Plain Craft Launcher 2/My Project/AssemblyInfo.vb').read_text(encoding='utf-8-sig')
           match = re.search(r'AssemblyFileVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)', text)
           if not match:
-              raise SystemExit('Could not find a four-part AssemblyFileVersion.')
+              raise SystemExit('Could not find a four-part/FileVersion.')
           print(match.group(1))
           PY
           )
@@ -102,7 +102,7 @@ jobs:
           git push origin "$tag"
           curl --fail-with-body -sS \
             -X POST \
-            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Authorization: Bearer ***" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/dispatches" \
