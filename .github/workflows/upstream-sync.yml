@@ -57,11 +57,10 @@ jobs:
           new = 'Public Const RestrictMcDownload As Boolean = False'
           count = text.count(old)
           if count == 0:
-              # Upstream may already have it set to False
               if new in text:
                   print("Already patched: RestrictMcDownload is already False.")
                   raise SystemExit(0)
-              raise SystemExit(f'Expected restriction constant not found; refusing to patch.')
+              raise SystemExit(f'Restriction constant not found; refusing to patch.')
           if count != 1:
               raise SystemExit(f'Expected exactly one restriction constant, found {count}; refusing to patch.')
           path.write_text(text.replace(old, new, 1), encoding='utf-8-sig', newline='')
@@ -87,8 +86,6 @@ jobs:
       - name: Create release tag and dispatch release build
         if: env.UPSTREAM_CHANGED == 'true'
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           version=$(python3 - <<'PY'
@@ -107,10 +104,4 @@ jobs:
           fi
           git tag -a "$tag" -m "Plain Craft Launcher rebuild ${version}"
           git push origin "$tag"
-          curl --fail-with-body -sS \
-            -X POST \
-            -H "Authorization: Bearer ***" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/release.yml/dispatches" \
-            -d "$(jq -n --arg ref main --arg tag "$tag" '{ref: $ref, inputs: {release_tag: $tag}}')"
+          gh workflow run --repo "${GITHUB_REPOSITORY}" release.yml --ref main --field "release_tag=${tag}"
