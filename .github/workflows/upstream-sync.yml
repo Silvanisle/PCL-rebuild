@@ -86,6 +86,8 @@ jobs:
       - name: Create release tag and dispatch release build
         if: env.UPSTREAM_CHANGED == 'true'
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           version=$(python3 - <<'PY'
@@ -99,8 +101,13 @@ jobs:
           PY
           )
           tag="v${version}"
+          sha=$(git rev-parse --short=7 HEAD)
           if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
-            tag="${tag}-build.${GITHUB_SHA:0:7}"
+            tag="${tag}-build.${sha}"
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "Tag ${tag} already exists; skipping release dispatch."
+            exit 0
           fi
           git tag -a "$tag" -m "Plain Craft Launcher rebuild ${version}"
           git push origin "$tag"
